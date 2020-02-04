@@ -56,6 +56,7 @@ estimateDurationQuery <- function(app_id, trigger_clause, conversion_clause, sub
   estimateData$target_cvr <- estimateData$base_cvr*(1+delta)
   days_to_run <- durationEstimation(users=estimateData$subjects, conversions=estimateData$conversions, delta, recipes, stat_power)
   print(paste("Days to run:", days_to_run))
+  print(estimateData)
 
   # Return a list with the estimate results
   estimateData$days_to_run <- days_to_run
