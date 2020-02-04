@@ -59,7 +59,7 @@ mojitoReportExperimentSizing <- function(conversion_point) {
 
 # Diagnotics plot & SRM test
 # Useful for diagnosing bad assignment ratios and tracking issues
-mojitoDiagnostics <- function(wave_params, dailyDf, ratios = c(0.5, 0.5)) {
+mojitoDiagnostics <- function(wave_params, dailyDf, proportions = c(0.5, 0.5)) {
 
   # Plot exposed users per time grain
   exposed_users <- dailyDf %>%
@@ -95,11 +95,16 @@ mojitoDiagnostics <- function(wave_params, dailyDf, ratios = c(0.5, 0.5)) {
     dailyDf,
     length(wave_params$recipes)
   )[,-1]
-  for (i in 1:length(wave_params$recipes))
-  {
-    srm_test <- binom.test(x = df$subjects[i], n = sum(df$subjects), p = ratios[i])
-    cat(paste0(wave_params$recipes[i], " SRM test: ", percent(srm_test$estimate), " (expected: ",percent(ratios[i]),", p-value: ", pvalue(srm_test$p.value), ") <br />"))
+  srm_test <- chisq.test(x = df$subjects, p = proportions)
+
+  srm_message <- ""
+  for (srm_i in 1:length(wave_params$recipes)) {
+    expected <- proportions[srm_i]
+    observed <- df$subject[srm_i]/sum(df$subject)
+    srm_message <- paste0(srm_message, "<br />", wave_params$recipes[srm_i], ": ", percent(observed), " (", percent(expected), " expected)")
   }
+
+  cat(paste0("SRM p-value: ", pvalue(srm_test$p.value), srm_message))
 
 
   # Plot and output errors if available
