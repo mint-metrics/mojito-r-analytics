@@ -12,6 +12,7 @@ library("knitr")
 library("jsonlite")
 
 # Report options
+# Requires PNG Quant to be installed - https://pngquant.org/
 knit_hooks$set(pngquant = hook_pngquant)
 options(ztable.type="html")
 if ((is.na(Sys.timezone()) || is.null(Sys.timezone())) && !exists("mojitoReportTimezone")) {
