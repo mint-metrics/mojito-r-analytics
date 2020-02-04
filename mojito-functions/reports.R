@@ -8,9 +8,12 @@ library("reshape")
 library("ztable")
 library("dplyr")
 library("stats")
-
+library("knitr")
+library("jsonlite")
 
 # Report options
+# Requires PNG Quant to be installed - https://pngquant.org/
+knit_hooks$set(pngquant = hook_pngquant)
 options(ztable.type="html")
 if ((is.na(Sys.timezone()) || is.null(Sys.timezone())) && !exists("mojitoReportTimezone")) {
   stop("Mojito Reports: Set your R timezone or supply an override e.g. 'Australia/Melbourne' via the `mojitoReportTimezone` variable")
@@ -55,28 +58,9 @@ mojitoReportExperimentSizing <- function(conversion_point) {
   }
 }
 
-
-# SRM test
-# Check for assignment issues with Ron Kohavi's SRM check: https://twitter.com/ronnyk/status/932798952679776256?lang=en
-mojitoSrmTest <- function(wave_params, dailyDf, expected_ratio=0.5) {
-  # Get the last two fields in the dailyDf dataframe and order results if recipes are specified
-  df <- tail(
-    dailyDf,
-    length(wave_params$recipes)
-  )[,-1]
-
-  actual_ratio <- df$subjects[1] / sum(df$subjects)
-  srm_z <- (actual_ratio - expected_ratio) / (sqrt( expected_ratio * (1-expected_ratio) / sum(df$subjects) ))
-  srm_p <- 2 * (1-pnorm(srm_z))
-
-  return(srm_p)
-
-}
-
-
 # Diagnotics plot & SRM test
 # Useful for diagnosing bad assignment ratios and tracking issues
-mojitoDiagnostics <- function(wave_params, dailyDf) {
+mojitoDiagnostics <- function(wave_params, dailyDf, proportions = c(0.5, 0.5)) {
 
   # Plot exposed users per time grain
   exposed_users <- dailyDf %>%
@@ -88,7 +72,10 @@ mojitoDiagnostics <- function(wave_params, dailyDf) {
     ylab("Subjects") + xlab("Exposure time") +
     scale_color_discrete(guide=F)
 
-  # Plot SRM
+  print(exposed_plot)
+
+
+  # Plot ratios over time
   srmplot_data <- dailyDf %>%
     group_by(exposure_time) %>%
     mutate(total_subjects = sum(subjects, na.rm=T)) %>%
@@ -101,11 +88,25 @@ mojitoDiagnostics <- function(wave_params, dailyDf) {
     ylab("Ratio") + xlab("Exposure time") +
     scale_alpha(guide=F) + theme(legend.position = "bottom", legend.title = element_blank())
 
-  srm_metric <- mojitoSrmTest(wave_params = wave_params, dailyDf = dailyDf, expected_ratio = 1/length(wave_params$recipes))
-  
-  print(exposed_plot)
   print(srm_plot)
-  print(paste0("SRM p-value (proportion assigned to Control is evenly assigned?): ", srm_metric, " (",ifelse(srm_metric<0.001,"No", "Yes"),")"))
+
+
+  # SRM test
+  # Using chisq.test() as per @lukasvermeer's test https://github.com/lukasvermeer/srm/blob/a5c529c2f816b98730dd5e337b711cc022ded7e0/chrome-extension/tests/computeSRM.test.js
+  df <- tail(
+    dailyDf,
+    length(wave_params$recipes)
+  )[,-1]
+  srm_test <- chisq.test(x = df$subjects, p = proportions)
+
+  srm_message <- ""
+  for (srm_i in 1:length(wave_params$recipes)) {
+    expected <- proportions[srm_i]
+    observed <- df$subject[srm_i]/sum(df$subject)
+    srm_message <- paste0(srm_message, "<br />", wave_params$recipes[srm_i], ": ", percent(observed), " (", percent(expected), " expected)")
+  }
+
+  cat(paste0("SRM p-value: ", pvalue(srm_test$p.value), srm_message))
 
 
   # Plot and output errors if available
@@ -132,7 +133,7 @@ mojitoUniqueConversions <- function(wave_params, goal, operand="=", goal_count=1
     result <- mojitoGetUniqueConversions(wave_params, goal, operand=operand, goal_count, segment, segment_val_operand, segment_negative)
     last_result <<- result
   }, error = function(e){
-    print(paste("Error:",e))
+    print(paste("Error: ",e))
   })
 
   # Populate recipe names for convenience
@@ -161,6 +162,8 @@ mojitoFullKnit <- function(wave_params, goal_list=NA) {
   for (i in 1:length(lapply(goal_list, "["))) {
 
     itemList <- lapply(goal_list, "[")[[i]]
+
+    # TODO: Roll up Revenue & Time to convert & Diagnostics reports into full knitter
     
     if (!is.null(itemList$segment_type) && itemList$segment_type == "traffic") {
       # Traffic segments data
@@ -184,6 +187,11 @@ mojitoFullKnit <- function(wave_params, goal_list=NA) {
         segment_val_operand=ifelse(is.null(itemList$segment_val_operand), "=", itemList$segment_val_operand), 
         segment_negative=ifelse(is.null(itemList$segment_negative), F, itemList$segment_negative)
       )
+
+      if (!("recipes" %in% names(wave_params))) {
+        wave_params$recipes <- unique(result$recipe_name)
+      }
+
       rowResult <- mojitoSummaryTableRows(goal_list[[i]]$result, wave_params = wave_params, goal_list=goal_list[[i]])
 
       if (exists("summaryDf")) {
@@ -212,7 +220,11 @@ mojitoFullKnit <- function(wave_params, goal_list=NA) {
       mojitoTabUniqueCvr(wave_params, goal_list[[i]]$result)
     }
   }
-  
+
+  # Save data to HTML & return full list from function
+  cat(paste0("<meta name='mojitoReportDataBase64' id='mojitoReportData' value='",
+    jsonlite::base64_enc(jsonlite::toJSON(goal_list, "rows")),
+    "'>"))
   return(goal_list)
   
 }
