@@ -91,6 +91,7 @@ mojitoDiagnostics <- function(wave_params, dailyDf, proportions = c(0.5, 0.5)) {
 
 
   # SRM test
+  # Using chisq.test() as per @lukasvermeer's test https://github.com/lukasvermeer/srm/blob/a5c529c2f816b98730dd5e337b711cc022ded7e0/chrome-extension/tests/computeSRM.test.js
   df <- tail(
     dailyDf,
     length(wave_params$recipes)
