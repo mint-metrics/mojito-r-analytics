@@ -222,7 +222,9 @@ mojitoFullKnit <- function(wave_params, goal_list=NA) {
   }
 
   # Save data to HTML & return full list from function
-  cat(paste0("<meta name='mojitoReportData' value='",jsonlite::toJSON(goal_list, "rows"),"'>"))
+  cat(paste0("<meta name='mojitoReportDataBase64' id='mojitoReportData' value='",
+    jsonlite::base64_enc(jsonlite::toJSON(goal_list, "rows")),
+    "'>"))
   return(goal_list)
   
 }
