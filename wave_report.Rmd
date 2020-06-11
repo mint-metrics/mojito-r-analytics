@@ -2,15 +2,15 @@
 title: 'EX1 Experiment for Google users'
 author: 'Mint Metrics'
 date: Knitted `r format(Sys.Date(),format = "%d %B %Y")`
-header-includes:
 output:
-  prettydoc::html_pretty:
-    theme: cayman
-    highlight: github
-mainfont: Roboto Light
+  html_document:
+    toc: true
+    toc_float: true
+    theme: sandstone
 ---
+<style type="text/css">@media print {#TOC {display: none;}}</style>
 ```{r includes, include=FALSE, echo=FALSE, cache=FALSE, warning=FALSE}
-# Optional: Path to Redshift/PostgreSQL connection (must expose "con" connection variable in this namespace)
+# TO CONFIGURE: Path to Redshift/PostgreSQL connection (must expose "con" connection variable in this namespace)
 for (lib in c("reports","plots","tables","queries_snowplow_redshift","experiment_sizing")) {
   source(paste0("./mojito-functions/",lib,".R"))
 }
@@ -27,17 +27,11 @@ wave_params <- list(
 )
 ```
 
-## Details
-
-**Hypotheses:  ** The treatment will increase transactions.
-
 **Started:     ** `r wave_params$start_date`
 
 **Ended:       ** `r mojitoReportDates(wave_params)`
 
-## Summary
-
- * TBA
+# Summary
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.height=3, fig.width=10, fig.align='center'}
 goalList <- list(

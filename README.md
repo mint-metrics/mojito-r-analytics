@@ -4,14 +4,18 @@ Fully templateable experiment reports for Mojito Snowplow/Redshift, using R Mark
 
 ![Mojito report](reports.png)
 
-**NB:** Use restricted users with read-only access. We assume your analysts are good actors with their SQL logins and won't do anything dodgy.
-
 ## Features
 
  - Measure tests against a series of configurable metrics
  - Measure changes in time to convert
  - Goal counts / conversion depth reports for measuring frequency / user loyalty (e.g. user transacted 2 or more times)
- - Diagnostic functions check for [assignment problems (SRM test)](https://twitter.com/ronnyk/status/932798952679776256?lang=en) and [experiment errors](https://mintmetrics.io/experiments/why-you-need-error-tracking-handling-in-your-split-tests/)
+ - Diagnostic functions check for [assignment problems (SRM test)](https://www.lukasvermeer.nl/srm/) and [experiment errors](https://mintmetrics.io/experiments/why-you-need-error-tracking-handling-in-your-split-tests/)
+
+## Links
+
+- [Full documentation](https://mojito.mx/docs/r-analytics-intro)
+- [Open an issue on Github](https://github.com/mint-metrics/mojito-r-analytics/issues/new)
+
 
 ## Prerequisites
 
@@ -128,8 +132,8 @@ We're keen to help you get set up - Open issues with any problems you encounter.
 
 Eventually we'd love to add Bayesian inferential stats to our reports - we're currently playing with it, but not fully comfortable with it yet for production reports.
 
+Learn more & get in touch:
 
-Reach out via:
-
+* [Full documentation](https://mojito.mx/docs/r-analytics-intro)
 * [Open an issue on Github](https://github.com/mint-metrics/mojito-r-analytics/issues/new)
-* [Mint Metrics' website](https://mintmetrics.io/)
+* [Contact Mint Metrics](https://mintmetrics.io/)
