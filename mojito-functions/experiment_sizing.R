@@ -87,8 +87,6 @@ estimateDurationRaw <- function(subjects, conversions, delta, recipes, stat_powe
   # Return a list with the estimate results
   estimateData$days_to_run <- days_to_run
   eta_list <- list(
-      "app_id" = app_id,
-      "subject" = subject,
       "delta" = delta,
       "recipes" = recipes,
       "stat_power" = stat_power,
