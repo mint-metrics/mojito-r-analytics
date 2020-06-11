@@ -179,20 +179,27 @@ mojitoSummaryTableRows <- function(dailyDf, wave_params, goal_list) {
 
 # Create Summary table
 mojitoTabulateSummaryDf <- function(summaryDf) {
-  colnames(summaryDf) <- c("Goal", "Recipe", "\\% lift", "p-value")
-  recipeCnt <- length(unique(summaryDf$Recipe))
-  goalNames <- unique(rownames(summaryDf))
-  groupCnt <- rep(recipeCnt, length(goalNames))
+  colnames(summaryDf) <- c("Goal", "Recipe", "% lift", "p-value")
 
-  tab <- ztable(summaryDf, size=7, align="llcc")#, rgroup=goalNames, n.rgroup=groupCnt) #%>%
-    #makeHeatmap(palette="RdYlGn", cols=c(3)) # heatmap for lifts column - requires ztable 0.2.0 
+  # Hide treatment names if only 2 variants
+  recipeCnt <- length(unique(summaryDf$Recipe))
+  columnOffset <- 0
+  if (recipeCnt == 1) {
+    summaryDf <- summaryDf[,c(1,3,4)]
+    columnOffset = columnOffset + 1
+  }
+  pValueCol <- 4-columnOffset
+  liftCol <- 3-columnOffset
+
+  # Highlight statistically significant values
+  tab <- ztable(summaryDf, size=7, align="llcc", include.rownames=FALSE)
   for (i in 1:length(summaryDf$Goal)) {
-    if (summaryDf[i,4]<0.05 && !is.na(summaryDf[i,3])) {
-      tab <- addCellColor(tab, rows=c(i+1), cols=c(5), c("mediumspringgreen"))
-      if (summaryDf[i,3]>0) {
-        tab <- addCellColor(tab, rows=c(i+1), cols=c(4), c("mediumspringgreen"))
+    if (summaryDf[i,pValueCol]<0.05 && !is.na(summaryDf[i,liftCol])) {
+      tab <- addCellColor(tab, rows=c(i+1), cols=c(pValueCol+1), c("mediumspringgreen"))
+      if (summaryDf[i,liftCol]>0) {
+        tab <- addCellColor(tab, rows=c(i+1), cols=c(liftCol+1), c("mediumspringgreen"))
       } else {
-        tab <- addCellColor(tab, rows=c(i+1), cols=c(4), c("lightcoral"))
+        tab <- addCellColor(tab, rows=c(i+1), cols=c(liftCol+1), c("lightcoral"))
       }
     }
   }
