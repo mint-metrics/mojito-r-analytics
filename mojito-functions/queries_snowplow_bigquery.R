@@ -31,38 +31,38 @@ mojitoGetUniqueConversions <- function(wave_params, goal, operand="=", goal_coun
         FROM ",wave_params$tables$goal," c
           INNER JOIN ",wave_params$tables$exposure," x
             ON c.subject = x.subject
-              and x.wave_id = '",wave_params$wave_id,"'
-              and x.exposure_tstamp < c.conversion_tstamp
-              and exposure_tstamp BETWEEN
-                convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$start_date,"')
-                and Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$stop_date,"')
-              and conversion_tstamp BETWEEN
-                convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$start_date,"')
-                and Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$stop_date,"')
-              and goal ",operand," '",goal,"'
+              AND x.wave_id = '",wave_params$wave_id,"'
+              AND x.exposure_tstamp < c.conversion_tstamp
+              AND exposure_tstamp BETWEEN
+                TIMESTAMP('",wave_params$start_date,"', '",mojitoReportTimezone,"')
+                AND TIMESTAMP('",wave_params$stop_date,"', '",mojitoReportTimezone,"')
+              AND conversion_tstamp BETWEEN
+                TIMESTAMP('",wave_params$start_date,"', '",mojitoReportTimezone,"')
+                AND TIMESTAMP('",wave_params$stop_date,"', '",mojitoReportTimezone,"')
+              and ",goal,"
         GROUP BY 1
         HAVING count(*) >= ",goal_count,"
       ),
 
       daily_aggregate AS (
         SELECT
-          date_trunc('",wave_params$time_grain,"', Convert_timezone('UTC', '",mojitoReportTimezone,"', x.exposure_tstamp)) as exposure_tstamp,
+          TIMESTAMP_TRUNC(x.exposure_tstamp, ",wave_params$time_grain,", '",mojitoReportTimezone,"') as exposure_tstamp,
           x.recipe_name,
-          count(DISTINCT x.subject)                                                          as subjects,
-          count(DISTINCT c.subject)                                                          as conversions
+          count(DISTINCT x.subject) as subjects,
+          count(DISTINCT c.subject) as conversions
         FROM ",wave_params$tables$exposure," x
           LEFT JOIN user_goal_count c
             ON (
               x.subject = c.subject
               AND exposure_tstamp BETWEEN
-                Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$start_date,"')
-                AND Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$stop_date,"')
+                TIMESTAMP('",wave_params$start_date,"', '",mojitoReportTimezone,"')
+                AND TIMESTAMP('",wave_params$stop_date,"', '",mojitoReportTimezone,"')
             )
         WHERE
-          AND wave_id = '",wave_params$wave_id,"'
+          wave_id = '",wave_params$wave_id,"'
           AND exposure_tstamp BETWEEN
-            Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$start_date,"')
-            AND Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$stop_date,"')
+            TIMESTAMP('",wave_params$start_date,"', '",mojitoReportTimezone,"')
+            AND TIMESTAMP('",wave_params$stop_date,"', '",mojitoReportTimezone,"')
           ",segment_clause,"
           AND NOT (
             x.subject IS NULL
@@ -72,7 +72,7 @@ mojitoGetUniqueConversions <- function(wave_params, goal, operand="=", goal_coun
     )
 
     select distinct
-      exposure_tstamp,
+      exposure_tstamp as exposure_time,
       recipe_name,
       sum(subjects)
       over (
@@ -92,11 +92,14 @@ mojitoGetUniqueConversions <- function(wave_params, goal, operand="=", goal_coun
   last_query <<- query
 
   df <- mojitoBqConstrctor(mojito_ds, query)
+  df$exposure_time <- as.POSIXct(df$exposure_time)
 
   if ("recipes" %in% names(wave_params)) {
     df <- df[df$recipe_name %in% wave_params$recipes,]
     df$recipe_name <- factor(df$recipe_name, levels = wave_params$recipes)
   }
+
+  last_df <<- df
 
   return(df)
 }
