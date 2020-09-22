@@ -237,12 +237,13 @@ mojitoGetErrorsChart <- function(wave_params) {
   query <<- paste0("
     SELECT 
       component,
-      DATE_TRUNC('",wave_params$time_grain,"', convert_timezone('UTC', '",mojitoReportTimezone,"', derived_tstamp)) AS tstamp,
+      TIMESTAMP_TRUNC(derived_tstamp, ",wave_params$time_grain,", '",mojitoReportTimezone,"') as tstamp,
       COUNT(*) AS errors,
       count(distinct subject) AS subjects
     FROM ",wave_params$tables$failure,"
-    WHERE derived_tstamp >= '",wave_params$start_date,"'
-      AND derived_tstamp <= '",wave_params$stop_date,"'
+    WHERE derived_tstamp BETWEEN
+        TIMESTAMP('",wave_params$start_date,"', '",mojitoReportTimezone,"')
+        AND TIMESTAMP('",wave_params$stop_date,"', '",mojitoReportTimezone,"')
       AND wave_id = '",wave_params$wave_id,"'
     GROUP BY 1, 2
     ORDER BY 3 DESC;
@@ -269,8 +270,10 @@ mojitoGetErrorsTab <- function(wave_params) {
       COUNT(*) AS errors,
       count(distinct subject) AS subjects
     FROM ",wave_params$tables$failure,"
-    WHERE derived_tstamp >= '",wave_params$start_date,"'
-      AND derived_tstamp <= '",wave_params$stop_date,"'
+    WHERE 
+      derived_tstamp BETWEEN 
+        TIMESTAMP('",wave_params$start_date,"', '",mojitoReportTimezone,"')
+        AND TIMESTAMP('",wave_params$stop_date,"', '",mojitoReportTimezone,"')
       AND wave_id = '",wave_params$wave_id,"'
     GROUP BY component, error
     ORDER BY 3 DESC

@@ -116,15 +116,17 @@ mojitoDiagnostics <- function(wave_params, dailyDf, proportions = NULL) {
   if (!is.null(wave_params$tables$failure)) {
     error_plot_data <- mojitoGetErrorsChart(wave_params)
     if (length(error_plot_data) == 4) {
-      cat(paste0("<br /><h3>Errors tracked</h3>"))
-      error_plot <- ggplot(error_plot_data, aes(tstamp, color=component)) +
-        geom_line(aes(y=subjects)) +
-        xlab(NULL) + ylab("Errors") + theme(legend.position="bottom")
-      print(error_plot)
+      if (length(error_plot_data$tstamp) != 0) {
+        cat(paste0("<br /><h3>Errors tracked</h3>"))
+        error_plot <- ggplot(error_plot_data, aes(tstamp, color=component)) +
+          geom_line(aes(y=subjects)) +
+          xlab(NULL) + ylab("Errors") + theme(legend.position="bottom")
+        print(error_plot)
 
-      tab_data <- mojitoGetErrorsTab(wave_params)
-      colnames(tab_data) <- c("Component", "Error message", "Total errors", "Subjects")
-      knitr::kable(tab_data, format = "html")
+        tab_data <- mojitoGetErrorsTab(wave_params)
+        colnames(tab_data) <- c("Component", "Error message", "Total errors", "Subjects")
+        knitr::kable(tab_data, format = "html")
+      }
     }
   }
 
