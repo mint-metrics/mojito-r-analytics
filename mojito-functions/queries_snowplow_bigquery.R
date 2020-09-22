@@ -173,58 +173,49 @@ mojitoGetRevenueOrders <- function(wave_params, goal, operand="=", segment=NA, s
 
   query <- paste0(
     "
-    WITH daily_aggregate AS (
-        SELECT
-          date_trunc('",wave_params$time_grain,"',Convert_timezone('UTC', '",mojitoReportTimezone,"', x.exposure_tstamp)) AS exposure_tstamp,
-          x.recipe_name,
-          count(DISTINCT x.subject) as subjects,
-          count(c.subject) as transactions,
-          sum(revenue) as revenue
-        FROM ",wave_params$tables$exposure," x
-        LEFT JOIN ",wave_params$tables$goal," c
-          ON (
-            x.subject = c.subject
-            AND x.exposure_tstamp < c.conversion_tstamp
-            AND exposure_tstamp BETWEEN 
-              Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$start_date,"')
-              AND Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$stop_date,"')
-            AND conversion_tstamp BETWEEN 
-              Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$start_date,"')
-              AND Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$stop_date,"')
-            AND revenue IS NOT NULL
-            AND goal ",operand," '",goal,"'
-          )
-        WHERE
-          AND wave_id = '",wave_params$wave_id,"'
-          AND exposure_tstamp BETWEEN 
-            Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$start_date,"')
-            AND Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$stop_date,"')
-          AND NOT (
-            x.subject IS NULL
-            OR x.recipe_name IS NULL
-          )
-          ",segment_clause,"
-        GROUP  BY 1, 2
-    )
-
-    select distinct
-      exposure_tstamp,
-      recipe_name,
-      sum(subjects) over (partition by recipe_name order by exposure_tstamp rows unbounded PRECEDING) as subjects,
-      sum(transactions) over (partition by recipe_name order by exposure_tstamp rows unbounded PRECEDING) as transactions,
-      sum(revenue) over (partition by recipe_name order by exposure_tstamp rows unbounded PRECEDING) as revenue
-    from daily_aggregate
-    order BY 1,2;
+    SELECT
+      x.recipe_name,
+      count(DISTINCT x.subject) as subjects,
+      count(c.subject) as transactions,
+      sum(revenue) as revenue
+    FROM ",wave_params$tables$exposure," x
+    LEFT JOIN ",wave_params$tables$goal," c
+      ON (
+        x.subject = c.subject
+        AND x.exposure_tstamp < c.conversion_tstamp
+        AND exposure_tstamp BETWEEN
+          TIMESTAMP('",wave_params$start_date,"', '",mojitoReportTimezone,"')
+          AND TIMESTAMP('",wave_params$stop_date,"', '",mojitoReportTimezone,"')
+        AND conversion_tstamp BETWEEN
+          TIMESTAMP('",wave_params$start_date,"', '",mojitoReportTimezone,"')
+          AND TIMESTAMP('",wave_params$stop_date,"', '",mojitoReportTimezone,"')
+        AND revenue IS NOT NULL
+        AND ",goal,"
+      )
+    WHERE
+      wave_id = '",wave_params$wave_id,"'
+      AND exposure_tstamp BETWEEN
+        TIMESTAMP('",wave_params$start_date,"', '",mojitoReportTimezone,"')
+        AND TIMESTAMP('",wave_params$stop_date,"', '",mojitoReportTimezone,"')
+      AND NOT (
+        x.subject IS NULL
+        OR x.recipe_name IS NULL
+      )
+      ",segment_clause,"
+    GROUP  BY 1
     "
   )
 
   last_query <<- query
 
   df <- mojitoBqConstrctor(mojito_ds, query)
+  df <- as.data.frame(df)
 
   if ("recipes" %in% names(wave_params)) {
     df <- df[df$recipe_name %in% wave_params$recipes,]
   }
+
+  last_df <<- df
 
   return(df)
 
