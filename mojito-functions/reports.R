@@ -60,7 +60,7 @@ mojitoReportExperimentSizing <- function(conversion_point) {
 
 # Diagnotics plot & SRM test
 # Useful for diagnosing bad assignment ratios and tracking issues
-mojitoDiagnostics <- function(wave_params, dailyDf, proportions = c(0.5, 0.5)) {
+mojitoDiagnostics <- function(wave_params, dailyDf, proportions = NULL) {
 
   # Plot exposed users per time grain
   exposed_users <- dailyDf %>%
@@ -93,6 +93,9 @@ mojitoDiagnostics <- function(wave_params, dailyDf, proportions = c(0.5, 0.5)) {
 
   # SRM test
   # Using chisq.test() as per @lukasvermeer's test https://github.com/lukasvermeer/srm/blob/a5c529c2f816b98730dd5e337b711cc022ded7e0/chrome-extension/tests/computeSRM.test.js
+  if (is.null(proportions)) {
+    proportions <- rep(1/length(wave_params$recipes), length(wave_params$recipes))
+  }
   df <- tail(
     dailyDf,
     length(wave_params$recipes)
@@ -110,18 +113,21 @@ mojitoDiagnostics <- function(wave_params, dailyDf, proportions = c(0.5, 0.5)) {
 
 
   # Plot and output errors if available
-  error_plot_data <- mojitoGetErrorsChart(wave_params)
-  if (length(error_plot_data) == 4) {
-    cat(paste0("<br /><h3>Errors tracked</h3>"))
-    error_plot <- ggplot(error_plot_data, aes(tstamp, color=component)) +
-      geom_line(aes(y=subjects)) +
-      xlab(NULL) + ylab("Errors") + theme(legend.position="bottom")
-    print(error_plot)
+  if (!is.null(wave_params$tables$failure)) {
+    error_plot_data <- mojitoGetErrorsChart(wave_params)
+    if (length(error_plot_data) == 4) {
+      cat(paste0("<br /><h3>Errors tracked</h3>"))
+      error_plot <- ggplot(error_plot_data, aes(tstamp, color=component)) +
+        geom_line(aes(y=subjects)) +
+        xlab(NULL) + ylab("Errors") + theme(legend.position="bottom")
+      print(error_plot)
 
-    tab_data <- mojitoGetErrorsTab(wave_params)
-    colnames(tab_data) <- c("Component", "Error message", "Total errors", "Subjects")
-    knitr::kable(tab_data, format = "html")
+      tab_data <- mojitoGetErrorsTab(wave_params)
+      colnames(tab_data) <- c("Component", "Error message", "Total errors", "Subjects")
+      knitr::kable(tab_data, format = "html")
+    }
   }
+
 }
 
 
