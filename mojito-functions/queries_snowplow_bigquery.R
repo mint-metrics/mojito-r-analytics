@@ -115,35 +115,37 @@ mojitoGetConversionTimeIntervals <- function(wave_params, goal, operand="=", tim
     "
     SELECT
       x.recipe_name,
-      datediff('",time_grain,"', min(exposure_tstamp), min(conversion_tstamp)) AS time_interval
+      TIMESTAMP_DIFF(min(conversion_tstamp), min(exposure_tstamp), ",time_grain,") AS time_interval
     FROM ",wave_params$tables$exposure," x
       INNER JOIN ",wave_params$tables$goal," c
         ON (
           x.subject = c.subject
           AND x.exposure_tstamp < c.conversion_tstamp
           AND exposure_tstamp BETWEEN
-            Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$start_date,"')
-            AND Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$stop_date,"')
+            TIMESTAMP('",wave_params$start_date,"', '",mojitoReportTimezone,"')
+            AND TIMESTAMP('",wave_params$stop_date,"', '",mojitoReportTimezone,"')
           AND conversion_tstamp BETWEEN
-            Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$start_date,"')
-            AND Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$stop_date,"')
-          AND goal ",operand," '",goal,"'
+            TIMESTAMP('",wave_params$start_date,"', '",mojitoReportTimezone,"')
+            AND TIMESTAMP('",wave_params$stop_date,"', '",mojitoReportTimezone,"')
+          AND ",goal,"
         )
     WHERE
-      AND wave_id = '",wave_params$wave_id,"'
+      wave_id = '",wave_params$wave_id,"'
       AND exposure_tstamp BETWEEN
-        Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$start_date,"')
-        AND Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$stop_date,"')
+        TIMESTAMP('",wave_params$start_date,"', '",mojitoReportTimezone,"')
+        AND TIMESTAMP('",wave_params$stop_date,"', '",mojitoReportTimezone,"')
       AND NOT (
         x.subject IS NULL
         OR x.recipe_name IS NULL
       )
     GROUP BY 1, c.subject
-    HAVING datediff('",time_grain,"', min(exposure_tstamp), min(conversion_tstamp)) < ",max_interval,";
+    HAVING TIMESTAMP_DIFF(min(conversion_tstamp), min(exposure_tstamp), ",time_grain,") < ",max_interval,";
     "
   )
 
+  last_query <<- query
   df <- mojitoBqConstrctor(mojito_ds, query)
+  df <- as.data.frame(df)
 
   if ("recipes" %in% names(wave_params)) {
     df <- df[df$recipe_name %in% wave_params$recipes,]
