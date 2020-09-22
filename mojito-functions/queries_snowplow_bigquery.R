@@ -92,6 +92,7 @@ mojitoGetUniqueConversions <- function(wave_params, goal, operand="=", goal_coun
   last_query <<- query
 
   df <- mojitoBqConstrctor(mojito_ds, query)
+  df <- as.data.frame(df)
   df$exposure_time <- as.POSIXct(df$exposure_time)
 
   if ("recipes" %in% names(wave_params)) {
