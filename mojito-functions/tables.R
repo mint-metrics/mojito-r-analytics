@@ -23,7 +23,7 @@ mojitoTabUniqueCvr <- function(wave_params, dailyDf) {
   
   for (i in 2:length(expResult$conversions)) {
     tempLift <- ((expResult$cvr[i]-expResult$cvr[1])/expResult$cvr[1])
-    expResult$lift[i] <- ifelse(!is.nan(tempLift) && is.numeric(tempLift), percent(tempLift), NA)
+    expResult$lift[i] <- ifelse(!is.nan(tempLift) && is.numeric(tempLift), tempLift, NA)
     expResult$p[i] <- ifelse(
         expResult$conversions[1] == 0 | is.null(expResult$conversions[1]) | expResult$conversions[i] == 0 | is.null(expResult$conversions[i]),
         1, 
@@ -36,10 +36,11 @@ mojitoTabUniqueCvr <- function(wave_params, dailyDf) {
     )
   }
 
-  expResult$cvr <- percent(expResult$cvr)
+  expResult$cvr <- percent(expResult$cvr, accuracy = 0.01)
+  expResult$lift <- percent(expResult$lift[2:length(expResult$lift)], accuracy = 0.01)
   expResult$p[2:length(expResult$p)] <- pvalue(expResult$p[2:length(expResult$p)])
-  expResult$subjects <- comma(expResult$subjects)
-  expResult$conversions <- comma(expResult$conversions)
+  expResult$subjects <- comma(expResult$subjects, accuracy = 1)
+  expResult$conversions <- comma(expResult$conversions, accuracy = 1)
   colnames(expResult) <- c("Recipe","Subjects","Goals","\\% Conv.", "\\% Lift", "p-Value")
   backup <- expResult
   expResult <- expResult[,-1]
@@ -47,8 +48,8 @@ mojitoTabUniqueCvr <- function(wave_params, dailyDf) {
   rownames(expResult) <- gsub("(#|-|_|&)", " ", backup[,1])
 
   tab <- expResult
-  tab <- ztable(tab, size=7) #%>%
-    #makeHeatmap(palette="RdYlGn", cols=c(3)) # heatmap for lifts column - requires ztable 0.2.0 
+  tab <- ztable(tab, size=7)
+
   for (i in 2:recipes) {
     if (backup[i,6]<0.05 && !is.na(backup[i,5])) {
         tab=addCellColor(tab, rows=c(i+1), cols=c(6), "mediumspringgreen")
@@ -80,13 +81,13 @@ mojitoTabUniqueTrafficCvr <- function(wave_params, df) {
     } else {
       controlCvr <- (controlRecord$conversions / controlRecord$subjects) 
       result$ratio[i] <- tryCatch({
-            percent(result$subjects[i] / (result$subjects[i] + controlRecord$subjects))
+            result$subjects[i] / (result$subjects[i] + controlRecord$subjects)
         }, finally = {
             result$subjects[i] / (result$subjects[i] + controlRecord$subjects)
         })
       if (controlCvr != 0) {
         result$lift[i] <- tryCatch({
-              percent((controlCvr - (result$conversions[i] / result$subjects[i])) / controlCvr)
+              (controlCvr - (result$conversions[i] / result$subjects[i])) / controlCvr
           }, finally = {
               ((controlCvr - (result$conversions[i] / result$subjects[i])) / controlCvr)
           })
@@ -95,7 +96,7 @@ mojitoTabUniqueTrafficCvr <- function(wave_params, df) {
   }
 
   result <- result[result$recipe_name != wave_params$recipes[1], c(1,2,3,5,6)]
-  result$subjects <- comma(result$subjects)
+  result$subjects <- comma(result$subjects, accuracy = 1)
   colnames(result) <- c("Recipe", "Source", "Subjects", "Ratio", "% lift")
   tab <- ztable(result, size=7, align="llccc")
   print(tab)
@@ -160,8 +161,8 @@ mojitoSummaryTableRows <- function(dailyDf, wave_params, goal_list) {
 
   rowResult$cvr <- percent(rowResult$cvr)
   rowResult$p[2:length(rowResult$p)] <- pvalue(rowResult$p[2:length(rowResult$p)])
-  rowResult$subjects <- comma(rowResult$subjects)
-  rowResult$conversions <- comma(rowResult$conversions)
+  rowResult$subjects <- comma(rowResult$subjects, accuracy = 1)
+  rowResult$conversions <- comma(rowResult$conversions, accuracy = 1)
   rowResult <- rowResult[,c(5,1,6,7)]
   rowResult <- rowResult[!is.na(rowResult$p),]
   rowResult[,2] <- gsub("(#|-|_|&)", " ", rowResult[,2])
