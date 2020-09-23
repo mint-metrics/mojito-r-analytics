@@ -244,49 +244,37 @@ mojitoGetRevenueOrders <- function(wave_params, goal, operand="=", segment=NA, s
 
   query <- paste0(
     "
-    WITH daily_aggregate AS (
-        SELECT
-          date_trunc('",wave_params$time_grain,"',Convert_timezone('UTC', '",mojitoReportTimezone,"', x.exposure_time)) AS exposure_time,
-          x.recipe_name,
-          count(DISTINCT x.subject) as subjects,
-          count(c.subject) as transactions,
-          sum(revenue) as revenue
-        FROM ",wave_params$tables$exposure," x
-        LEFT JOIN ",wave_params$tables$goal," c
-          ON (
-            x.subject = c.subject
-            AND x.exposure_time < c.conversion_time
-            AND exposure_time BETWEEN 
-              Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$start_date,"')
-              AND Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$stop_date,"')
-            AND conversion_time BETWEEN 
-              Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$start_date,"')
-              AND Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$stop_date,"')
-            AND revenue IS NOT NULL
-            AND goal ",operand," '",goal,"'
-          )
-        WHERE
-          client_id = '",wave_params$client_id,"'
-          AND wave_id = '",wave_params$wave_id,"'
-          AND exposure_time BETWEEN 
-            Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$start_date,"')
-            AND Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$stop_date,"')
-          AND NOT (
-            x.subject IS NULL
-            OR x.recipe_name IS NULL
-          )
-          ",segment_clause,"
-        GROUP  BY 1, 2
-    )
-
-    select distinct
-      exposure_time,
-      recipe_name,
-      sum(subjects) over (partition by recipe_name order by exposure_time rows unbounded PRECEDING) as subjects,
-      sum(transactions) over (partition by recipe_name order by exposure_time rows unbounded PRECEDING) as transactions,
-      sum(revenue) over (partition by recipe_name order by exposure_time rows unbounded PRECEDING) as revenue
-    from daily_aggregate
-    order BY 1,2;
+    SELECT
+      x.recipe_name,
+      count(DISTINCT x.subject) as subjects,
+      count(c.subject) as transactions,
+      sum(revenue) as revenue
+    FROM ",wave_params$tables$exposure," x
+    LEFT JOIN ",wave_params$tables$goal," c
+      ON (
+        x.subject = c.subject
+        AND x.exposure_time < c.conversion_time
+        AND exposure_time BETWEEN
+          Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$start_date,"')
+          AND Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$stop_date,"')
+        AND conversion_time BETWEEN
+          Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$start_date,"')
+          AND Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$stop_date,"')
+        AND revenue IS NOT NULL
+        AND goal ",operand," '",goal,"'
+      )
+    WHERE
+      client_id = '",wave_params$client_id,"'
+      AND wave_id = '",wave_params$wave_id,"'
+      AND exposure_time BETWEEN
+        Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$start_date,"')
+        AND Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$stop_date,"')
+      AND NOT (
+        x.subject IS NULL
+        OR x.recipe_name IS NULL
+      )
+      ",segment_clause,"
+    GROUP  BY 1
     "
   )
 

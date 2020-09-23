@@ -93,6 +93,7 @@ mojitoTabUniqueTrafficCvr <- function(wave_params, df) {
       }
     }
   }
+
   result <- result[result$recipe_name != wave_params$recipes[1], c(1,2,3,5,6)]
   result$subjects <- comma(result$subjects)
   colnames(result) <- c("Recipe", "Source", "Subjects", "Ratio", "% lift")
@@ -103,20 +104,7 @@ mojitoTabUniqueTrafficCvr <- function(wave_params, df) {
 
 
 # Tabulate revenue data
-mojitoTabRevenue <- function(dailyDf) {
-
-  # TODO: Remove exposure tstamp window function from Redshift
-  if ("exposure_tstamp" %in% colnames(dailyDf)) {
-    tab <- dailyDf %>%
-      group_by(recipe_name) %>%
-      transmute(subjects = max(subjects,na.rm = T),
-                transactions = max(transactions,na.rm = T),
-                revenue = max(revenue,na.rm = T)) %>%
-      distinct(.keep_all = T) %>%
-      data.frame()
-  } else {
-    tab <- dailyDf
-  }
+mojitoTabRevenue <- function(tab) {
 
   tab$trans_per_subject <- tab$transactions/tab$subjects
   tab$revenue_per_trans <- tab$revenue/tab$transactions
