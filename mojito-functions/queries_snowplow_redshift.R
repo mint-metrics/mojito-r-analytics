@@ -3,7 +3,7 @@
 #
 
 # Unique conversion data
-mojitoGetUniqueConversions <- function(wave_params, goal, operand="=", goal_count=1, segment_type=NA, segment_value=NA, segment_val_operand="=", segment_negative=FALSE) {
+mojitoGetUniqueConversions <- function(wave_params, goal, goal_count=1, segment_type=NA, segment_value=NA, segment_val_operand="=", segment_negative=FALSE) {
 
   if(!is.na(segment_type)) {
     segment_clause <- paste0("
@@ -34,7 +34,7 @@ mojitoGetUniqueConversions <- function(wave_params, goal, operand="=", goal_coun
               and conversion_time BETWEEN
               convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$start_date,"')
               and Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$stop_date,"')
-              and goal ",operand," '",goal,"'
+              and ",goal,"
         GROUP BY 1
         HAVING count(*) >= ",goal_count,"
       ),
@@ -94,6 +94,8 @@ mojitoGetUniqueConversions <- function(wave_params, goal, operand="=", goal_coun
     df$recipe_name <- factor(df$recipe_name, levels = wave_params$recipes)
   }
 
+  last_df <<- df
+
   return(df)
 }
 
@@ -102,7 +104,7 @@ mojitoGetUniqueConversions <- function(wave_params, goal, operand="=", goal_coun
 
 
 # Traffic conversions segments
-mojitoGetUniqueTrafficConversions <- function(wave_params, goal, operand="=", goal_count=1, segment_type=NA, segment_value=NA) {
+mojitoGetUniqueTrafficConversions <- function(wave_params, goal, goal_count=1, segment_type=NA, segment_value=NA) {
   
   query <- paste0(
     "
@@ -121,7 +123,7 @@ mojitoGetUniqueTrafficConversions <- function(wave_params, goal, operand="=", go
         and conversion_time BETWEEN
           convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$start_date,"')
           and Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$stop_date,"')
-        and goal ",operand," '",goal,"'
+        and ",goal,"
     GROUP BY 1
     HAVING count(*) >= ",goal_count,"
   ),
@@ -174,12 +176,14 @@ mojitoGetUniqueTrafficConversions <- function(wave_params, goal, operand="=", go
     df$recipe_name <- factor(df$recipe_name, levels = wave_params$recipes)
   }
 
+  last_df <<- df
+
   return(df)
 }
 
 
 # Time diff for conversions
-mojitoGetConversionTimeIntervals <- function(wave_params, goal, operand="=", time_grain="minute", max_interval=30) {
+mojitoGetConversionTimeIntervals <- function(wave_params, goal, time_grain="minute", max_interval=30) {
 
   query <- paste0(
     "
@@ -197,11 +201,10 @@ mojitoGetConversionTimeIntervals <- function(wave_params, goal, operand="=", tim
           AND conversion_time BETWEEN
             Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$start_date,"')
             AND Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$stop_date,"')
-          AND goal ",operand," '",goal,"'
+          AND ",goal,"
         )
-    WHERE
-      client_id = '",wave_params$client_id,"'
-      AND wave_id = '",wave_params$wave_id,"'
+    WHERE 
+      wave_id = '",wave_params$wave_id,"'
       AND exposure_time BETWEEN
         Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$start_date,"')
         AND Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$stop_date,"')
@@ -221,13 +224,15 @@ mojitoGetConversionTimeIntervals <- function(wave_params, goal, operand="=", tim
     df$recipe_name <- factor(df$recipe_name, levels = wave_params$recipes)
   }
 
+  last_df <<- df
+
   return(df)
 }
 
 
 
 # Revenue data extract
-mojitoGetRevenueOrders <- function(wave_params, goal, operand="=", segment=NA, segment_val_operand="=", segment_negative=FALSE) {
+mojitoGetRevenueOrders <- function(wave_params, goal, segment=NA, segment_val_operand="=", segment_negative=FALSE) {
   
   if(!is.na(segment)) {
     segment_clause <- paste0("
@@ -261,7 +266,7 @@ mojitoGetRevenueOrders <- function(wave_params, goal, operand="=", segment=NA, s
           Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$start_date,"')
           AND Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$stop_date,"')
         AND revenue IS NOT NULL
-        AND goal ",operand," '",goal,"'
+        AND ",goal,"
       )
     WHERE
       client_id = '",wave_params$client_id,"'
@@ -285,6 +290,8 @@ mojitoGetRevenueOrders <- function(wave_params, goal, operand="=", segment=NA, s
   if ("recipes" %in% names(wave_params)) {
     df <- df[df$recipe_name %in% wave_params$recipes,]
   }
+
+  last_df <<- df
 
   return(df)
 
