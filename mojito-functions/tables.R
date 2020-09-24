@@ -41,7 +41,7 @@ mojitoTabUniqueCvr <- function(wave_params, dailyDf) {
   expResult$p[2:length(expResult$p)] <- pvalue(expResult$p[2:length(expResult$p)])
   expResult$subjects <- comma(expResult$subjects, accuracy = 1)
   expResult$conversions <- comma(expResult$conversions, accuracy = 1)
-  colnames(expResult) <- c("Recipe","Subjects","Goals","\\% Conv.", "\\% Lift", "p-Value")
+  colnames(expResult) <- c("Recipe","Subjects","Goals","% Conv.", "% Lift", "p-Value")
   backup <- expResult
   expResult <- expResult[,-1]
   expResult[1,c(4,5)] <- ""
@@ -120,7 +120,7 @@ mojitoTabRevenue <- function(tab) {
   
   rownames(tab) <- gsub("(#|-|_|&)", " ", tab[,1])
   tab <- tab[,-1]
-  colnames(tab) <- c("Subjects", "Transactions", "Revenue", "Txns/subject", "\\$/Txn", "\\$/subject")
+  colnames(tab) <- c("Subjects", "Transactions", "Revenue", "Txns/subject", "$/Txn", "$/subject")
 
   print(ztable(tab, size=7))
 
