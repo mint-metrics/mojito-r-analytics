@@ -37,7 +37,7 @@ mojitoTabUniqueCvr <- function(wave_params, dailyDf) {
   }
 
   expResult$cvr <- percent(expResult$cvr, accuracy = 0.01)
-  expResult$lift <- percent(expResult$lift[2:length(expResult$lift)], accuracy = 0.01)
+  expResult$lift[2:length(expResult$lift)] <- percent(expResult$lift[2:length(expResult$lift)], accuracy = 0.01)
   expResult$p[2:length(expResult$p)] <- pvalue(expResult$p[2:length(expResult$p)])
   expResult$subjects <- comma(expResult$subjects, accuracy = 1)
   expResult$conversions <- comma(expResult$conversions, accuracy = 1)
