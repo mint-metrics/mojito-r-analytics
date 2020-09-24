@@ -23,7 +23,7 @@ mojitoTabUniqueCvr <- function(wave_params, dailyDf) {
   
   for (i in 2:length(expResult$conversions)) {
     tempLift <- ((expResult$cvr[i]-expResult$cvr[1])/expResult$cvr[1])
-    expResult$lift[i] <- ifelse(!is.nan(tempLift) && is.numeric(tempLift), tempLift, NA)
+    expResult$lift[i] <- ifelse(!is.nan(tempLift) && is.numeric(tempLift), tempLift, 0)
     expResult$p[i] <- ifelse(
         expResult$conversions[1] == 0 | is.null(expResult$conversions[1]) | expResult$conversions[i] == 0 | is.null(expResult$conversions[i]),
         1, 
