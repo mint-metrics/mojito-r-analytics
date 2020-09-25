@@ -11,8 +11,7 @@ mojitoGetUniqueConversions <- function(wave_params, goal, goal_count=1, segment_
         SELECT DISTINCT subject 
         FROM ",wave_params$tables$segment,"
         WHERE segment_type = '",segment_type,"' 
-            AND segment_value ",segment_val_operand," '",segment_value,"'
-            AND client_id = '",wave_params$client_id,"')")
+            AND segment_value ",segment_val_operand," '",segment_value,"')")
   } else {
     segment_clause <- ""
   }
@@ -25,7 +24,6 @@ mojitoGetUniqueConversions <- function(wave_params, goal, goal_count=1, segment_
         FROM ",wave_params$tables$goal," c
           INNER JOIN ",wave_params$tables$exposure," x
             ON c.subject = x.subject
-              and x.client_id = '",wave_params$client_id,"'
               and x.wave_id = '",wave_params$wave_id,"'
               and x.exposure_time < c.conversion_time
               and exposure_time BETWEEN
@@ -54,8 +52,7 @@ mojitoGetUniqueConversions <- function(wave_params, goal, goal_count=1, segment_
             AND Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$stop_date,"')
             )
         WHERE
-          client_id = '",wave_params$client_id,"'
-          AND wave_id = '",wave_params$wave_id,"'
+          wave_id = '",wave_params$wave_id,"'
           AND exposure_time BETWEEN
           Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$start_date,"')
           AND Convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$stop_date,"')
@@ -114,7 +111,6 @@ mojitoGetUniqueTrafficConversions <- function(wave_params, goal, goal_count=1, s
     FROM ",wave_params$tables$goal," c
     INNER JOIN ",wave_params$tables$exposure," x
       ON c.subject = x.subject
-        and x.client_id = '",wave_params$client_id,"'
         and x.wave_id = '",wave_params$wave_id,"'
         and x.exposure_time < c.conversion_time
         and exposure_time BETWEEN
@@ -134,8 +130,6 @@ mojitoGetUniqueTrafficConversions <- function(wave_params, goal, goal_count=1, s
     FROM ",wave_params$tables$exposure," x
     INNER JOIN ",wave_params$tables$channel," t
       ON t.domain_userid = x.subject
-        AND x.client_id = '",wave_params$client_id,"'
-        AND t.app_id = '",wave_params$client_id,"'
         AND x.wave_id = '",wave_params$wave_id,"'
         AND exposure_time BETWEEN convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$start_date,"')
           and convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$stop_date,"')
@@ -152,7 +146,6 @@ mojitoGetUniqueTrafficConversions <- function(wave_params, goal, goal_count=1, s
     ON x.subject = c.subject
       AND exposure_time BETWEEN convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$start_date,"')
         and convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$stop_date,"')
-      AND client_id = '",wave_params$client_id,"'
       AND wave_id = '",wave_params$wave_id,"'
       AND NOT (x.subject IS NULL OR x.recipe_name IS NULL)
   LEFT JOIN user_traffic_source t
@@ -160,7 +153,6 @@ mojitoGetUniqueTrafficConversions <- function(wave_params, goal, goal_count=1, s
   WHERE 
     exposure_time BETWEEN convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$start_date,"')
       and convert_timezone('",mojitoReportTimezone,"', 'UTC', '",wave_params$stop_date,"')
-    AND client_id = '",wave_params$client_id,"'
     AND wave_id = '",wave_params$wave_id,"'
     AND NOT (x.subject IS NULL OR x.recipe_name IS NULL)
   GROUP BY 1, 2
@@ -241,8 +233,7 @@ mojitoGetRevenueOrders <- function(wave_params, goal, segment=NA, segment_val_op
           subject 
         FROM ",wave_params$tables$segment,"
         WHERE segment_type = '",segment$type,"' 
-            AND segment_value ",segment_val_operand," '",segment$value,"'
-            AND client_id = '",wave_params$client_id,"')")
+            AND segment_value ",segment_val_operand," '",segment$value,"')")
   } else {
     segment_clause <- ""
   }
@@ -269,8 +260,7 @@ mojitoGetRevenueOrders <- function(wave_params, goal, segment=NA, segment_val_op
         AND ",goal,"
       )
     WHERE
-      client_id = '",wave_params$client_id,"'
-      AND wave_id = '",wave_params$wave_id,"'
+      wave_id = '",wave_params$wave_id,"'
       AND exposure_time BETWEEN
         Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$start_date,"')
         AND Convert_timezone('",mojitoReportTimezone,"','UTC','",wave_params$stop_date,"')
@@ -310,7 +300,6 @@ mojitoGetErrorsChart <- function(wave_params) {
     FROM ",wave_params$tables$failure,"
     WHERE derived_tstamp >= '",wave_params$start_date,"'
       AND derived_tstamp <= '",wave_params$stop_date,"'
-      AND client_id = '",wave_params$client_id,"'
       AND wave_id = '",wave_params$wave_id,"'
     GROUP BY 1, 2
     ORDER BY 3 DESC;
@@ -338,7 +327,6 @@ mojitoGetErrorsTab <- function(wave_params) {
     FROM ",wave_params$tables$failure,"
     WHERE derived_tstamp >= '",wave_params$start_date,"'
       AND derived_tstamp <= '",wave_params$stop_date,"'
-      AND client_id = '",wave_params$client_id,"'
       AND wave_id = '",wave_params$wave_id,"'
     GROUP BY component, error
     ORDER BY 3 DESC

@@ -135,10 +135,10 @@ mojitoDiagnostics <- function(wave_params, dailyDf, proportions = NULL) {
 
 # Unique conversions report
 # Plot p-value / delta charts and a summary table for a given metric/segment combination
-mojitoUniqueConversions <- function(wave_params, goal, operand="=", goal_count=1, segment=NA, segment_val_operand="=", segment_negative=TRUE) {
+mojitoUniqueConversions <- function(wave_params, goal, goal_count=1, segment=NA, segment_val_operand="=", segment_negative=TRUE) {
 
   tryCatch({
-    result <- mojitoGetUniqueConversions(wave_params, goal, operand=operand, goal_count, segment, segment_val_operand, segment_negative)
+    result <- mojitoGetUniqueConversions(wave_params, goal, goal_count, segment, segment_val_operand, segment_negative)
     last_result <<- result
   }, error = function(e){
     print(paste("Error: ",e))
@@ -178,7 +178,6 @@ mojitoFullKnit <- function(wave_params, goal_list=NA) {
       goal_list[[i]]$result <- mojitoGetUniqueTrafficConversions(
         wave_params=wave_params, 
         goal=itemList$goal, 
-        operand=itemList$operand, 
         goal_count=ifelse(is.null(itemList$goal_count),1,itemList$goal_count),
         segment_type=ifelse(is.null(itemList$segment_type),NA,itemList$segment_type),
         segment_value=ifelse(is.null(itemList$segment_value),NA,itemList$segment_value)
@@ -188,7 +187,6 @@ mojitoFullKnit <- function(wave_params, goal_list=NA) {
       goal_list[[i]]$result <- mojitoGetUniqueConversions(
         wave_params=wave_params, 
         goal=itemList$goal, 
-        operand=itemList$operand, 
         goal_count=ifelse(is.null(itemList$goal_count),1,itemList$goal_count),
         segment_type=ifelse(is.null(itemList$segment_type),NA,itemList$segment_type),
         segment_value=ifelse(is.null(itemList$segment_value),NA,itemList$segment_value), 

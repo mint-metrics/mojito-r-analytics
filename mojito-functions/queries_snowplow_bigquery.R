@@ -9,7 +9,7 @@ mojitoBqConstrctor <- function(ds, query) {
 
 
 # Unique conversion data
-mojitoGetUniqueConversions <- function(wave_params, goal, operand="=", goal_count=1, segment_type=NA, segment_value=NA, segment_val_operand="=", segment_negative=FALSE) {
+mojitoGetUniqueConversions <- function(wave_params, goal, goal_count=1, segment_type=NA, segment_value=NA, segment_val_operand="=", segment_negative=FALSE) {
 
   if(!is.na(segment_type)) {
     segment_clause <- paste0("
@@ -109,7 +109,7 @@ mojitoGetUniqueConversions <- function(wave_params, goal, operand="=", goal_coun
 
 
 # Time diff for conversions
-mojitoGetConversionTimeIntervals <- function(wave_params, goal, operand="=", time_grain="minute", max_interval=30) {
+mojitoGetConversionTimeIntervals <- function(wave_params, goal, time_grain="minute", max_interval=30) {
 
   query <- paste0(
     "
@@ -158,7 +158,7 @@ mojitoGetConversionTimeIntervals <- function(wave_params, goal, operand="=", tim
 
 
 # Revenue data extract
-mojitoGetRevenueOrders <- function(wave_params, goal, operand="=", segment=NA, segment_val_operand="=", segment_negative=FALSE) {
+mojitoGetRevenueOrders <- function(wave_params, goal, segment=NA, segment_val_operand="=", segment_negative=FALSE) {
   
   if(!is.na(segment)) {
     segment_clause <- paste0("
