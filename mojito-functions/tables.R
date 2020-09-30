@@ -41,17 +41,20 @@ mojitoTabUniqueCvr <- function(wave_params, dailyDf) {
   expResult$p[2:length(expResult$p)] <- pvalue(expResult$p[2:length(expResult$p)])
   expResult$subjects <- comma(expResult$subjects, accuracy = 1)
   expResult$conversions <- comma(expResult$conversions, accuracy = 1)
+
+  # Fix to prevent `>` in p-values like `>0.999` as denoting a blockquote in markdown
+  expResult$p <- gsub(x = expResult$p, pattern = ">.*", replacement = "0.999+")
+
   colnames(expResult) <- c("Recipe","Subjects","Goals","% Conv.", "% Lift", "p-Value")
   backup <- expResult
   expResult <- expResult[,-1]
   expResult[1,c(4,5)] <- ""
   rownames(expResult) <- gsub("(#|-|_|&)", " ", backup[,1])
 
-  tab <- expResult
-  tab <- ztable(tab, size=7)
+  tab <- ztable(expResult, size=7)
 
   for (i in 2:recipes) {
-    if (backup[i,6]<0.05 && !is.na(backup[i,5])) {
+    if (backup[i,6]<0.05 && !is.na(backup[i,5]) && !grepl(x = backup[i,6], pattern = "0.99", fixed = TRUE)) {
         tab=addCellColor(tab, rows=c(i+1), cols=c(6), "mediumspringgreen")
         if (backup[i,5]>0) {
             tab=addCellColor(tab, rows=c(i+1), cols=c(5), "mediumspringgreen")
@@ -149,7 +152,7 @@ mojitoSummaryTableRows <- function(dailyDf, wave_params, goal_list) {
   
   for (i in 2:length(rowResult$conversions)) {
     tempLift <- ((rowResult$cvr[i]-rowResult$cvr[1])/rowResult$cvr[1])
-    rowResult$lift[i] <- ifelse(is.numeric(tempLift) && !is.nan(tempLift), percent(tempLift), NA)
+    rowResult$lift[i] <- ifelse(is.numeric(tempLift) && !is.nan(tempLift), percent(tempLift, accuracy = 0.01), NA)
     rowResult$p[i] <- ifelse(
         rowResult$conversions[1] == 0 | is.null(rowResult$conversions[1]),
         0, 
@@ -185,10 +188,13 @@ mojitoTabulateSummaryDf <- function(summaryDf) {
   pValueCol <- 4-columnOffset
   liftCol <- 3-columnOffset
 
+  # Fix to prevent `>` in p-values like `>0.999` as denoting a blockquote in markdown
+  summaryDf[,pValueCol] <- gsub(x = summaryDf[,pValueCol], pattern = ">.*", replacement = "0.999+")
+
   # Highlight statistically significant values
   tab <- ztable(summaryDf, size=7, align="llcc", include.rownames=FALSE)
   for (i in 1:length(summaryDf$Goal)) {
-    if (summaryDf[i,pValueCol]<0.05 && !is.na(summaryDf[i,liftCol])) {
+    if (summaryDf[i,pValueCol]<0.05 && !is.na(summaryDf[i,liftCol]) && !grepl(x = summaryDf[i,pValueCol], pattern = "\\+", fixed = TRUE)) {
       tab <- addCellColor(tab, rows=c(i+1), cols=c(pValueCol+1), c("mediumspringgreen"))
       if (summaryDf[i,liftCol]>0) {
         tab <- addCellColor(tab, rows=c(i+1), cols=c(liftCol+1), c("mediumspringgreen"))
