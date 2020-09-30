@@ -96,17 +96,18 @@ mojitoDiagnostics <- function(wave_params, dailyDf, proportions = NULL) {
   if (is.null(proportions)) {
     proportions <- rep(1/length(wave_params$recipes), length(wave_params$recipes))
   }
-  df <- tail(
-    dailyDf,
-    length(wave_params$recipes)
-  )[,-1]
+  df <- dailyDf %>%
+    filter(recipe_name %in% wave_params$recipes) %>%
+    group_by(recipe_name) %>%
+    transmute(subjects = max(subjects)) %>%
+    distinct(.keep_all = F)
   srm_test <- chisq.test(x = df$subjects, p = proportions)
 
   srm_message <- ""
   for (srm_i in 1:length(wave_params$recipes)) {
     expected <- proportions[srm_i]
-    observed <- df$subject[srm_i]/sum(df$subject)
-    srm_message <- paste0(srm_message, "<br />", wave_params$recipes[srm_i], ": ", percent(observed), " (", percent(expected), " expected)")
+    observed <- df$subjects[srm_i]/sum(df$subjects)
+    srm_message <- paste0(srm_message, "<br />", wave_params$recipes[srm_i], ": ", percent(observed, ), " (", percent(expected), " expected)")
   }
 
   cat(paste0("SRM p-value: ", pvalue(srm_test$p.value), srm_message))
