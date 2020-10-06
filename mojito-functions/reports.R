@@ -107,7 +107,7 @@ mojitoDiagnostics <- function(wave_params, dailyDf, proportions = NULL) {
   for (srm_i in 1:length(wave_params$recipes)) {
     expected <- proportions[srm_i]
     observed <- df$subjects[srm_i]/sum(df$subjects)
-    srm_message <- paste0(srm_message, "<br />", wave_params$recipes[srm_i], ": ", percent(observed, accuracy = 0.01), " (", percent(expected), " expected)")
+    srm_message <- paste0(srm_message, "<br />", wave_params$recipes[srm_i], ": ", percent(observed, accuracy = 0.01), " (", percent(expected, accuracy = 0.01), " expected)")
   }
 
   cat(paste0("SRM p-value: ", pvalue(srm_test$p.value), srm_message))
