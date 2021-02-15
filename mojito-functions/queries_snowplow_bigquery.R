@@ -2,7 +2,7 @@
 # Mojito Snowplow/BigQuery query functions
 #
 
-mojitoBqConstrctor <- function(ds, query) {
+mojitoBqConstructor <- function(ds, query) {
   tb <- bq_dataset_query(ds, query = query)
   return(bq_table_download(tb))
 }
@@ -91,7 +91,7 @@ mojitoGetUniqueConversions <- function(wave_params, goal, goal_count=1, segment_
 
   last_query <<- query
 
-  df <- mojitoBqConstrctor(mojito_ds, query)
+  df <- mojitoBqConstructor(mojito_ds, query)
   df <- as.data.frame(df)
   df$exposure_time <- as.POSIXct(df$exposure_time)
 
@@ -144,7 +144,7 @@ mojitoGetConversionTimeIntervals <- function(wave_params, goal, time_grain="minu
   )
 
   last_query <<- query
-  df <- mojitoBqConstrctor(mojito_ds, query)
+  df <- mojitoBqConstructor(mojito_ds, query)
   df <- as.data.frame(df)
 
   if ("recipes" %in% names(wave_params)) {
@@ -210,7 +210,7 @@ mojitoGetRevenueOrders <- function(wave_params, goal, segment=NA, segment_val_op
 
   last_query <<- query
 
-  df <- mojitoBqConstrctor(mojito_ds, query)
+  df <- mojitoBqConstructor(mojito_ds, query)
   df <- as.data.frame(df)
 
   if ("recipes" %in% names(wave_params)) {
@@ -243,7 +243,7 @@ mojitoGetErrorsChart <- function(wave_params) {
     ")
 
   tryCatch({
-    last_result <<- mojitoBqConstrctor(mojito_ds, query)
+    last_result <<- mojitoBqConstructor(mojito_ds, query)
 
     return(last_result)
   }, finally=function(){
@@ -273,7 +273,7 @@ mojitoGetErrorsTab <- function(wave_params) {
     LIMIT 10;
     ")
 
-  last_result <<- mojitoBqConstrctor(mojito_ds, query)
+  last_result <<- mojitoBqConstructor(mojito_ds, query)
 
   return(last_result)
 }
