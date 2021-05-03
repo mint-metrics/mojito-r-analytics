@@ -39,7 +39,7 @@ mojitoGetUniqueConversions <- function(wave_params, goal, goal_count=1, segment_
               AND conversion_tstamp BETWEEN
                 TIMESTAMP('",wave_params$start_date,"', '",mojitoReportTimezone,"')
                 AND TIMESTAMP('",wave_params$stop_date,"', '",mojitoReportTimezone,"')
-              and ",goal,"
+              and (",goal,")
         GROUP BY 1
         HAVING count(*) >= ",goal_count,"
       ),
@@ -127,7 +127,7 @@ mojitoGetConversionTimeIntervals <- function(wave_params, goal, time_grain="minu
           AND conversion_tstamp BETWEEN
             TIMESTAMP('",wave_params$start_date,"', '",mojitoReportTimezone,"')
             AND TIMESTAMP('",wave_params$stop_date,"', '",mojitoReportTimezone,"')
-          AND ",goal,"
+          AND (",goal,")
         )
     WHERE
       wave_id = '",wave_params$wave_id,"'
@@ -192,7 +192,7 @@ mojitoGetRevenueOrders <- function(wave_params, goal, segment=NA, segment_val_op
           TIMESTAMP('",wave_params$start_date,"', '",mojitoReportTimezone,"')
           AND TIMESTAMP('",wave_params$stop_date,"', '",mojitoReportTimezone,"')
         AND revenue IS NOT NULL
-        AND ",goal,"
+        AND (",goal,")
       )
     WHERE
       wave_id = '",wave_params$wave_id,"'
