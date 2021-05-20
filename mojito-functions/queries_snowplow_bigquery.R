@@ -9,7 +9,15 @@ mojitoBqConstructor <- function(ds, query) {
 
 
 # Unique conversion data
-mojitoGetUniqueConversions <- function(wave_params, goal, goal_count=1, segment_type=NA, segment_value=NA, segment_val_operand="=", segment_negative=FALSE) {
+mojitoGetUniqueConversions <- function(wave_params, goal, goal_count=1, segment=NULL, segment_type=NA, segment_value=NA, segment_val_operand="=", segment_negative=FALSE) {
+
+  if (!is.null(segment)) {
+    segment_query <- paste0("INNER JOIN (", segment, ") sg ON sg.subject = x.subject and x.exposure_tstamp >= sg.segment_tstamp ")
+  } else if (!is.null(wave_params$tables$segment)) {
+    segment_query <- paste0("INNER JOIN (", wave_params$tables$segment, ") sg ON sg.subject = x.subject and x.exposure_tstamp >= sg.segment_tstamp ")
+  } else {
+    segment_query <- ""
+  }
 
   if(!is.na(segment_type)) {
     segment_clause <- paste0("
@@ -58,6 +66,7 @@ mojitoGetUniqueConversions <- function(wave_params, goal, goal_count=1, segment_
                 TIMESTAMP('",wave_params$start_date,"', '",mojitoReportTimezone,"')
                 AND TIMESTAMP('",wave_params$stop_date,"', '",mojitoReportTimezone,"')
             )
+          ",segment_query,"
         WHERE
           wave_id = '",wave_params$wave_id,"'
           AND exposure_tstamp BETWEEN
