@@ -70,11 +70,10 @@ mojitoPlotUniqueDelta <- function(wave_params, dailyDf) {
 
 
 # Conversion time intervals plot & table
-mojitoTimeIntervals <- function(wave_params, goal, operand="=",time_grain="minutes",max_interval=30) {
+mojitoTimeIntervals <- function(wave_params, goal,time_grain="minutes",max_interval=30) {
   data <- mojitoGetConversionTimeIntervals(
     wave_params, 
-    goal, 
-    operand, 
+    goal,
     time_grain, 
     max_interval)
 

@@ -60,7 +60,7 @@ mojitoReportExperimentSizing <- function(conversion_point) {
 
 # Diagnotics plot & SRM test
 # Useful for diagnosing bad assignment ratios and tracking issues
-mojitoDiagnostics <- function(wave_params, dailyDf, proportions = c(0.5, 0.5)) {
+mojitoDiagnostics <- function(wave_params, dailyDf, proportions = NULL) {
 
   # Plot exposed users per time grain
   exposed_users <- dailyDf %>%
@@ -93,44 +93,53 @@ mojitoDiagnostics <- function(wave_params, dailyDf, proportions = c(0.5, 0.5)) {
 
   # SRM test
   # Using chisq.test() as per @lukasvermeer's test https://github.com/lukasvermeer/srm/blob/a5c529c2f816b98730dd5e337b711cc022ded7e0/chrome-extension/tests/computeSRM.test.js
-  df <- tail(
-    dailyDf,
-    length(wave_params$recipes)
-  )[,-1]
+  if (is.null(proportions)) {
+    proportions <- rep(1/length(wave_params$recipes), length(wave_params$recipes))
+  }
+  df <- dailyDf %>%
+    filter(recipe_name %in% wave_params$recipes) %>%
+    group_by(recipe_name) %>%
+    transmute(subjects = max(subjects)) %>%
+    distinct(.keep_all = F)
   srm_test <- chisq.test(x = df$subjects, p = proportions)
 
   srm_message <- ""
   for (srm_i in 1:length(wave_params$recipes)) {
     expected <- proportions[srm_i]
-    observed <- df$subject[srm_i]/sum(df$subject)
-    srm_message <- paste0(srm_message, "<br />", wave_params$recipes[srm_i], ": ", percent(observed), " (", percent(expected), " expected)")
+    observed <- df$subjects[srm_i]/sum(df$subjects)
+    srm_message <- paste0(srm_message, "<br />", wave_params$recipes[srm_i], ": ", percent(observed, accuracy = 0.01), " (", percent(expected, accuracy = 0.01), " expected)")
   }
 
   cat(paste0("SRM p-value: ", pvalue(srm_test$p.value), srm_message))
 
 
   # Plot and output errors if available
-  error_plot_data <- mojitoGetErrorsChart(wave_params)
-  if (length(error_plot_data) == 4) {
-    cat(paste0("<br /><h3>Errors tracked</h3>"))
-    error_plot <- ggplot(error_plot_data, aes(tstamp, color=component)) +
-      geom_line(aes(y=subjects)) +
-      xlab(NULL) + ylab("Errors") + theme(legend.position="bottom")
-    print(error_plot)
+  if (!is.null(wave_params$tables$failure)) {
+    error_plot_data <- mojitoGetErrorsChart(wave_params)
+    if (length(error_plot_data) == 4) {
+      if (length(error_plot_data$tstamp) != 0) {
+        cat(paste0("<br /><h3>Errors tracked</h3>"))
+        error_plot <- ggplot(error_plot_data, aes(tstamp, color=component)) +
+          geom_line(aes(y=subjects)) +
+          xlab(NULL) + ylab("Errors") + theme(legend.position="bottom")
+        print(error_plot)
 
-    tab_data <- mojitoGetErrorsTab(wave_params)
-    colnames(tab_data) <- c("Component", "Error message", "Total errors", "Subjects")
-    knitr::kable(tab_data, format = "html")
+        tab_data <- mojitoGetErrorsTab(wave_params)
+        colnames(tab_data) <- c("Component", "Error message", "Total errors", "Subjects")
+        knitr::kable(tab_data, format = "html")
+      }
+    }
   }
+
 }
 
 
 # Unique conversions report
 # Plot p-value / delta charts and a summary table for a given metric/segment combination
-mojitoUniqueConversions <- function(wave_params, goal, operand="=", goal_count=1, segment=NA, segment_val_operand="=", segment_negative=TRUE) {
+mojitoUniqueConversions <- function(wave_params, goal, goal_count=1, segment=NULL, segment_val_operand="=", segment_negative=TRUE) {
 
   tryCatch({
-    result <- mojitoGetUniqueConversions(wave_params, goal, operand=operand, goal_count, segment, segment_val_operand, segment_negative)
+    result <- mojitoGetUniqueConversions(wave_params, goal, goal_count, segment, segment_val_operand, segment_negative)
     last_result <<- result
   }, error = function(e){
     print(paste("Error: ",e))
@@ -170,7 +179,6 @@ mojitoFullKnit <- function(wave_params, goal_list=NA) {
       goal_list[[i]]$result <- mojitoGetUniqueTrafficConversions(
         wave_params=wave_params, 
         goal=itemList$goal, 
-        operand=itemList$operand, 
         goal_count=ifelse(is.null(itemList$goal_count),1,itemList$goal_count),
         segment_type=ifelse(is.null(itemList$segment_type),NA,itemList$segment_type),
         segment_value=ifelse(is.null(itemList$segment_value),NA,itemList$segment_value)
@@ -180,8 +188,8 @@ mojitoFullKnit <- function(wave_params, goal_list=NA) {
       goal_list[[i]]$result <- mojitoGetUniqueConversions(
         wave_params=wave_params, 
         goal=itemList$goal, 
-        operand=itemList$operand, 
         goal_count=ifelse(is.null(itemList$goal_count),1,itemList$goal_count),
+        segment = itemList$segment,
         segment_type=ifelse(is.null(itemList$segment_type),NA,itemList$segment_type),
         segment_value=ifelse(is.null(itemList$segment_value),NA,itemList$segment_value), 
         segment_val_operand=ifelse(is.null(itemList$segment_val_operand), "=", itemList$segment_val_operand), 
