@@ -53,7 +53,7 @@ durationEstimation = function(users, conversions, delta, recipes, stat_power)
 # Experiment sizing calculator main function
 # Provide an estimate given an experiment's parameters for querying against actual event data
 estimateDurationQuery <- function(table, trigger_clause, conversion_clause, subject="domain_userid", temporal_field="derived_tstamp", delta=0.1, recipes=2, stat_power=0.8) {
-  estimateData <- experimentTargetingQuery(
+  estimateData <<- experimentTargetingQuery(
     trigger_clause=trigger_clause,
     conversion_clause=conversion_clause,
     table=table,
