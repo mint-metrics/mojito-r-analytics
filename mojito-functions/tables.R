@@ -23,7 +23,7 @@ mojitoTabUniqueCvr <- function(wave_params, dailyDf) {
   
   for (i in 2:length(expResult$conversions)) {
     tempLift <- ((expResult$cvr[i]-expResult$cvr[1])/expResult$cvr[1])
-    expResult$lift[i] <- ifelse(!is.nan(tempLift) && is.numeric(tempLift), percent(tempLift), NA)
+    expResult$lift[i] <- ifelse(!is.nan(tempLift) && is.numeric(tempLift), tempLift, 0)
     expResult$p[i] <- ifelse(
         expResult$conversions[1] == 0 | is.null(expResult$conversions[1]) | expResult$conversions[i] == 0 | is.null(expResult$conversions[i]),
         1, 
@@ -36,21 +36,25 @@ mojitoTabUniqueCvr <- function(wave_params, dailyDf) {
     )
   }
 
-  expResult$cvr <- percent(expResult$cvr)
+  expResult$cvr <- percent(expResult$cvr, accuracy = 0.01)
+  expResult$lift[2:length(expResult$lift)] <- percent(expResult$lift[2:length(expResult$lift)], accuracy = 0.01)
   expResult$p[2:length(expResult$p)] <- pvalue(expResult$p[2:length(expResult$p)])
-  expResult$subjects <- comma(expResult$subjects)
-  expResult$conversions <- comma(expResult$conversions)
-  colnames(expResult) <- c("Recipe","Subjects","Goals","\\% Conv.", "\\% Lift", "p-Value")
+  expResult$subjects <- comma(expResult$subjects, accuracy = 1)
+  expResult$conversions <- comma(expResult$conversions, accuracy = 1)
+
+  # Fix to prevent `>` in p-values like `>0.999` as denoting a blockquote in markdown
+  expResult$p <- gsub(x = expResult$p, pattern = ">.*", replacement = "0.999+")
+
+  colnames(expResult) <- c("Recipe","Subjects","Goals","% Conv.", "% Lift", "p-Value")
   backup <- expResult
   expResult <- expResult[,-1]
   expResult[1,c(4,5)] <- ""
   rownames(expResult) <- gsub("(#|-|_|&)", " ", backup[,1])
 
-  tab <- expResult
-  tab <- ztable(tab, size=7) #%>%
-    #makeHeatmap(palette="RdYlGn", cols=c(3)) # heatmap for lifts column - requires ztable 0.2.0 
+  tab <- ztable(expResult, size=7)
+
   for (i in 2:recipes) {
-    if (backup[i,6]<0.05 && !is.na(backup[i,5])) {
+    if (backup[i,6]<0.05 && !is.na(backup[i,5]) && !grepl(x = backup[i,6], pattern = "0.99", fixed = TRUE)) {
         tab=addCellColor(tab, rows=c(i+1), cols=c(6), "mediumspringgreen")
         if (backup[i,5]>0) {
             tab=addCellColor(tab, rows=c(i+1), cols=c(5), "mediumspringgreen")
@@ -80,21 +84,22 @@ mojitoTabUniqueTrafficCvr <- function(wave_params, df) {
     } else {
       controlCvr <- (controlRecord$conversions / controlRecord$subjects) 
       result$ratio[i] <- tryCatch({
-            percent(result$subjects[i] / (result$subjects[i] + controlRecord$subjects))
+            result$subjects[i] / (result$subjects[i] + controlRecord$subjects)
         }, finally = {
             result$subjects[i] / (result$subjects[i] + controlRecord$subjects)
         })
       if (controlCvr != 0) {
         result$lift[i] <- tryCatch({
-              percent((controlCvr - (result$conversions[i] / result$subjects[i])) / controlCvr)
+              (controlCvr - (result$conversions[i] / result$subjects[i])) / controlCvr
           }, finally = {
               ((controlCvr - (result$conversions[i] / result$subjects[i])) / controlCvr)
           })
       }
     }
   }
+
   result <- result[result$recipe_name != wave_params$recipes[1], c(1,2,3,5,6)]
-  result$subjects <- comma(result$subjects)
+  result$subjects <- comma(result$subjects, accuracy = 1)
   colnames(result) <- c("Recipe", "Source", "Subjects", "Ratio", "% lift")
   tab <- ztable(result, size=7, align="llccc")
   print(tab)
@@ -103,15 +108,7 @@ mojitoTabUniqueTrafficCvr <- function(wave_params, df) {
 
 
 # Tabulate revenue data
-mojitoTabRevenue <- function(dailyDf) {
-
-  tab <- dailyDf %>%
-    group_by(recipe_name) %>%
-    transmute(subjects = max(subjects,na.rm = T),
-              transactions = max(transactions,na.rm = T),
-              revenue = max(revenue,na.rm = T)) %>%
-    distinct(.keep_all = T) %>%
-    data.frame()
+mojitoTabRevenue <- function(tab) {
 
   tab$trans_per_subject <- tab$transactions/tab$subjects
   tab$revenue_per_trans <- tab$revenue/tab$transactions
@@ -126,7 +123,7 @@ mojitoTabRevenue <- function(dailyDf) {
   
   rownames(tab) <- gsub("(#|-|_|&)", " ", tab[,1])
   tab <- tab[,-1]
-  colnames(tab) <- c("Subjects", "Transactions", "Revenue", "Txns/subject", "\\$/Txn", "\\$/subject")
+  colnames(tab) <- c("Subjects", "Transactions", "Revenue", "Txns/subject", "$/Txn", "$/subject")
 
   print(ztable(tab, size=7))
 
@@ -155,7 +152,7 @@ mojitoSummaryTableRows <- function(dailyDf, wave_params, goal_list) {
   
   for (i in 2:length(rowResult$conversions)) {
     tempLift <- ((rowResult$cvr[i]-rowResult$cvr[1])/rowResult$cvr[1])
-    rowResult$lift[i] <- ifelse(is.numeric(tempLift) && !is.nan(tempLift), percent(tempLift), NA)
+    rowResult$lift[i] <- ifelse(is.numeric(tempLift) && !is.nan(tempLift), percent(tempLift, accuracy = 0.01), NA)
     rowResult$p[i] <- ifelse(
         rowResult$conversions[1] == 0 | is.null(rowResult$conversions[1]),
         0, 
@@ -167,8 +164,8 @@ mojitoSummaryTableRows <- function(dailyDf, wave_params, goal_list) {
 
   rowResult$cvr <- percent(rowResult$cvr)
   rowResult$p[2:length(rowResult$p)] <- pvalue(rowResult$p[2:length(rowResult$p)])
-  rowResult$subjects <- comma(rowResult$subjects)
-  rowResult$conversions <- comma(rowResult$conversions)
+  rowResult$subjects <- comma(rowResult$subjects, accuracy = 1)
+  rowResult$conversions <- comma(rowResult$conversions, accuracy = 1)
   rowResult <- rowResult[,c(5,1,6,7)]
   rowResult <- rowResult[!is.na(rowResult$p),]
   rowResult[,2] <- gsub("(#|-|_|&)", " ", rowResult[,2])
@@ -191,10 +188,13 @@ mojitoTabulateSummaryDf <- function(summaryDf) {
   pValueCol <- 4-columnOffset
   liftCol <- 3-columnOffset
 
+  # Fix to prevent `>` in p-values like `>0.999` as denoting a blockquote in markdown
+  summaryDf[,pValueCol] <- gsub(x = summaryDf[,pValueCol], pattern = ">.*", replacement = "0.999+")
+
   # Highlight statistically significant values
   tab <- ztable(summaryDf, size=7, align="llcc", include.rownames=FALSE)
   for (i in 1:length(summaryDf$Goal)) {
-    if (summaryDf[i,pValueCol]<0.05 && !is.na(summaryDf[i,liftCol])) {
+    if (summaryDf[i,pValueCol]<0.05 && !is.na(summaryDf[i,liftCol]) && !grepl(x = summaryDf[i,pValueCol], pattern = "\\+", fixed = TRUE)) {
       tab <- addCellColor(tab, rows=c(i+1), cols=c(pValueCol+1), c("mediumspringgreen"))
       if (summaryDf[i,liftCol]>0) {
         tab <- addCellColor(tab, rows=c(i+1), cols=c(liftCol+1), c("mediumspringgreen"))
